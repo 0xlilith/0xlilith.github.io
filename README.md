@@ -1,2 +1,2 @@
 # 0xlilith.github.io
-uwu
+uwu :: https://ibullyyou.online
