@@ -1,7 +1,7 @@
 baseURL:
 title: "0xlilith"
 paginate: 5
-theme: PaperModX
+theme: hugo-PaperModXY
 
 enableRobotsTXT: true
 buildDrafts: false
