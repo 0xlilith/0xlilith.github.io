@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>writeup on 0xlilith</title>
+    <link>/tags/writeup/</link>
+    <description>Recent content in writeup on 0xlilith</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Sat, 07 Aug 2021 00:00:00 +0000</lastBuildDate><atom:link href="/tags/writeup/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>HeapOverride Senpai&#39;s Castle</title>
+      <link>/posts/heapoverride-senpais-castle/</link>
+      <pubDate>Sat, 07 Aug 2021 00:00:00 +0000</pubDate>
+      
+      <guid>/posts/heapoverride-senpais-castle/</guid>
+      <description>Lilith Struggling with heap senpai&amp;#39;s binary</description>
+      <content:encoded><![CDATA[<p><img loading="lazy" src="/images/img1.png" type="" alt=""  /></p>
+<p>hmmm smol pp moment ! now we go open it in a disassembler</p>
+<p><img loading="lazy" src="/images/img2.png" type="" alt=""  /></p>
+<p>lets read the main function!
+first it does its regular job of loading the stack and moving argc and argv to the registers
+then it checks weither the value of argc is == 2 as it takes one 1 argument vector shown in img1.
+If it fails the condition then it jumps to the address 0x11bd. less have a look at it.</p>
+<p><img loading="lazy" src="/images/img3.png" type="" alt=""  /></p>
+<p>brrr&hellip;.as we can see it just prints out the string &ldquo;Umm&hellip;no&hellip;&rdquo;
+now lets see what happens if it matches the condition i.e if we pass something in the argument vector.</p>
+<p><img loading="lazy" src="/images/img4.png" type="" alt=""  /></p>
+<p>okkkkkkkk wait i am feeling cold&hellip; i am back. Back to the whatever we are doing. We can see that the string
+that we entered is being passed to a function call fun.00011dc. Now lets see what that function does to our
+baby stringwqnwdn. uhhghhghg my string ;-;-;-;!!</p>
+<p><img loading="lazy" src="/images/img5.png" type="" alt=""  /></p>
+<p>brrrr this shit is too confusing lets decompile it else ill die trying
+you dont want me to die right?&hellip;.right? do you want me to die do you want me to DIE???
+ok</p>
+<p><img loading="lazy" src="/images/img6.png" type="" alt=""  /></p>
+<p>much better but we still need to do some cleanups&hellip;wait here
+I just changed the variable names to something readable brrr wtf is uVar3 and var4h._4_4</p>
+<p><img loading="lazy" src="/images/img7.png" type="" alt=""  /></p>
+<p>before we do anything else lets first see what that 0x4050 holds for us.
+shshbh &ldquo;FZGSVdzohWNAAGSCW^z_HMf]THbJWUnT_URK&rdquo; som crazy string.
+They are first comparing the length of that crazy string to the length of our baby string.
+And if the condition matches we enter inside the loop.</p>
+<p>lets make it moe simple [note: asuming crazy = 0x4050]</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="mi">13</span>  <span class="n">j</span> <span class="o">=</span> <span class="n">crazy_string_len</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="mi">14</span>  <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">crazy_string_len</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl"><span class="mi">15</span>    <span class="k">if</span> <span class="p">(</span><span class="n">crazy</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^</span> <span class="n">j</span> <span class="o">^</span> <span class="mi">55</span> <span class="p">)</span> <span class="o">!=</span> 
+</span></span><span class="line"><span class="cl"><span class="mi">16</span>      <span class="n">arg1</span><span class="p">[</span><span class="n">i</span><span class="p">]){</span> <span class="c1">// this next line is on purpose cus i am trying to replicate the code line by line
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="mi">17</span>      <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="mi">18</span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="mi">19</span>    <span class="n">j</span><span class="o">--</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="mi">20</span>  <span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>j stores the length of that crazy string. Then inside the for loop we have an if with some condition.
+char at index i of crazy xor j xor 55 is != char at index i of our baby string.
+waaaaaaw now we know whats actually happening inside the hood. We can just write a script to solve it</p>
+<p><img loading="lazy" src="/images/img8.png" type="" alt=""  /></p>
+<p>hmmm BIG pp moment !! we got the flag</p>
+]]></content:encoded>
+    </item>
+    
+  </channel>
+</rss>
