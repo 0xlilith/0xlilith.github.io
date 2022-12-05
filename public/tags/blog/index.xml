@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>blog on 0xlilith</title>
+    <link>/tags/blog/</link>
+    <description>Recent content in blog on 0xlilith</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Wed, 09 Feb 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/blog/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>JHaddix Methodology V4</title>
+      <link>/posts/jhaddix-methodology-v4/</link>
+      <pubDate>Wed, 09 Feb 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/posts/jhaddix-methodology-v4/</guid>
+      <description>My Recon Notes For JHaddix Methodology V4</description>
+      <content:encoded><![CDATA[<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">[ASN]───────────┐                 ┌───────[Root Domain]
+</span></span><span class="line"><span class="cl">                    |────[Recon]──{[TARGET]}
+</span></span><span class="line"><span class="cl">    [Acquisition]───|
+</span></span><span class="line"><span class="cl">                    |
+</span></span><span class="line"><span class="cl">    [Linked]────────|────[Whois]
+</span></span><span class="line"><span class="cl">                    |
+</span></span><span class="line"><span class="cl">        [SubDom]────┘
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="finding-seed-domain">FINDING SEED DOMAIN</h3>
+<ul>
+<li><a href="https://crunchbase.com">https://crunchbase.com</a> -&gt; find related acquasitions of the company</li>
+<li>(ASN Finding) -&gt; search for company name and asn numbers (doesnt tarcks cloud infra. spaces)
+<ul>
+<li><a href="https://bgp.he.net">https://bgp.he.net</a></li>
+<li>asnlookup.py(yassineaboukir)</li>
+<li>metabigor(j3ssiejjj) -&gt; [echo &rsquo;tesla&rsquo; | metabigor net &ndash;org -v]</li>
+<li>asnrecon</li>
+</ul>
+</li>
+<li>(ASN Enum) -&gt; For discovering more seed domains and return root domains
+<ul>
+<li>amass(Jeff Foley) -&gt; [amass intel -asn 46489]</li>
+</ul>
+</li>
+<li>(Reverse whois)
+<ul>
+<li><a href="https://www.whoxy.com">https://www.whoxy.com</a> -&gt; who has owned the company in the past</li>
+<li>DOMLink.py(Vincent Yiu) -&gt; recursively query whoxy whois api</li>
+</ul>
+</li>
+<li>(Ad/Analytics Relationship)
+<ul>
+<li><a href="https://builtwith.com/">https://builtwith.com/</a> -&gt; gives technology profile and relations profile</li>
+</ul>
+</li>
+<li>(Google-Fu)
+<ul>
+<li>eg: &ldquo;2019 Twitch INteractive, Inc.&rdquo; inurl:twitch</li>
+</ul>
+</li>
+<li>(Shodan)
+<ul>
+<li><a href="https://www.shodan.io/search?query=twitch.tv">https://www.shodan.io/search?query=twitch.tv</a> -&gt; spiders infrastructure on the internet</li>
+</ul>
+</li>
+</ul>
+<h3 id="subdomain-enumeration">SUBDOMAIN ENUMERATION</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl"> [subdomain enum]
+</span></span><span class="line"><span class="cl">    |-[linked and js discovery] 
+</span></span><span class="line"><span class="cl">    |-[subdomain scraping]
+</span></span><span class="line"><span class="cl">    |-[subdomain bruitforce]
+</span></span><span class="line"><span class="cl">    |- ++
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>
+<p>(Linked and Js discovery)</p>
+<ul>
+<li>Burp Suite Pro -&gt; hybrid technique to find both root/seed and subdomain
+<ul>
+<li>visit a seed/root and spider all the linked html and js</li>
+<li>turn off passive scanning</li>
+<li>set forms auto to submit</li>
+<li>set scope to advance control and use &ldquo;keyword&rdquo; of target</li>
+<li>browse the site, then spider all hosts</li>
+</ul>
+</li>
+<li>gospider(j3ssiejjj) -&gt; [gospider -s https://www.twitch.tv]</li>
+<li>hakrawler(hakluke)</li>
+<li>subdomainizer(Neeraj Edwards) -&gt; analyzing js and find out subdomains
+<ul>
+<li>find cloud services referenced in js files</li>
+<li>use shannon entrophy formula to find sensitive items in js files such as api keys</li>
+</ul>
+</li>
+<li>subscraper(Cillian Collins) -&gt; just scrapes js files and finds subdomains</li>
+</ul>
+</li>
+<li>
+<p>(Subdomain Scraping) -&gt; find more subdomains</p>
+<ul>
+<li>(Google) { - is used to exclude and narrow down the results}
+<ul>
+<li>site:twitch.tv -www.twitch.tv</li>
+<li>site:twitch.tv -www.twitch.tv -watch.twitch.tv</li>
+<li>site:twitch.tv -www.twitch.tv -watch.twitch.tv -dev.twitch.tv</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li>amass -&gt; [amass -d twitch.tv]
+<ul>
+<li>amass correlates the scraped domain to ASN and list where they came forms</li>
+<li>this helps to know the technology they are using</li>
+</ul>
+</li>
+<li>subfinder(projectdiscovery.io) -&gt; [subfinder -d twitch.tv -v]</li>
+<li>github-subdomains.py(Gwendal Le) -&gt; scrapes github repos and parse into list of subdomains</li>
+<li>shosubgo(inc0gbyt3) -&gt; shodan scraper to find subdomain using {needs api key}</li>
+<li>(Cloud Ranges) -&gt; technique to monitor whole cloud range for SSL sites and parse cert. to match target
+<ul>
+<li>eg: [curl &lsquo;https://tls.bufferover.run/dns?q=.twitch.tv&rsquo; 2&gt;/dev/null | jq .Results]</li>
+<li>Sam Erb defcon talk on how to set up such service</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>(Subdomain Bruitforce) -&gt; checking for live subdomains by resolving them</p>
+<ul>
+<li>amass -&gt; [amass enum -bruit -d twitch.tv -src] | [amass enum -bruit -d twitch.tv -rf resolvers.txt -w wordlist.list]</li>
+<li>shuffledns(projectdiscovery.io) -&gt; [shuffledns -d twitch.tv -w list.txt -r resolvers.txt]</li>
+</ul>
+<ul>
+<li>(wordlist)
+<ul>
+<li>Tailered wordlist
+<ul>
+<li>make wordlist in fly</li>
+<li>TomNomNom tool for making Tailered wordlist {who, what, where when, wordlist talk}</li>
+</ul>
+</li>
+<li>Massive wordlist
+<ul>
+<li>use all in one massive wordlist</li>
+<li>all.txt by JHaddix</li>
+<li><a href="https://github.com/assetnote/commonspeak2">https://github.com/assetnote/commonspeak2</a>
+(Alteration Scanning) -&gt; pattern of bruit forcing when a common sequence</li>
+</ul>
+</li>
+<li>eg: dev.company.com | dev1.company.com | dev2.company.com | dev-1.company.com | Dev.2.company.com</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="others">OTHERS</h3>
+<ul>
+<li>(port scan)
+<ul>
+<li>masscan(Robert Graham) -&gt; Used for scanning open ports {only for ip and not domain and much faster than nmap}
+[masscan -p1-65535 -iL $ipfile &ndash;max-rate 1800 -oG $output.log]
+<ul>
+<li>syntax guide: <a href="https://danielmiessler.com/study/masscan">https://danielmiessler.com/study/masscan</a></li>
+</ul>
+</li>
+<li>dnmasscan(rastating)   -&gt; Wrapper around masscan to scan domains
+[dnmasscan example.txt dns.log -oG scan.log]
+{example.txt contains dns and the ip will be stored in dns.log for further scanning}</li>
+</ul>
+</li>
+<li>(service scan)
+<ul>
+<li>brutespray(x90skysn3k) -&gt; scans for default remote admin protocols after port scan</li>
+</ul>
+</li>
+<li>(github dorking)
+<ul>
+<li>Jhaddix bash script for github dork wrapper</li>
+<li>github-search(Gwendal Le)</li>
+<li>th3g3ntelman&rsquo;s full module on github sensitive data exposure</li>
+</ul>
+</li>
+<li>(Screenshotting)
+<ul>
+<li>Aquatone</li>
+<li>HTTPscreenshot</li>
+<li>Eyewitness (for both http and https)</li>
+</ul>
+</li>
+</ul>
+<h3 id="subdomain-takeover">SUBDOMAIN TAKEOVER</h3>
+<blockquote>
+<p>occurs when a sub is pointing to a service which is removed or deleted.
+you can setup a page in similar service that was being used and point to that sub.</p>
+</blockquote>
+<ul>
+<li>can-i-take-over-xyz(EdOverflow) -&gt; github repo on how to claim subs for different services</li>
+<li>subover(Ic3man/projectdiscovery.io)</li>
+<li>nuclei(projectdiscovery.io) -&gt; large scale tool</li>
+</ul>
+<h3 id="automation">AUTOMATION++</h3>
+<ul>
+<li>Interlace(Codingo) -&gt; help glue up together these recon tools {hakluke&rsquo;s guide on it}
+<ul>
+<li>CIDR input</li>
+<li>Glob input</li>
+<li>threading</li>
+<li>proxying</li>
+<li>queue command</li>
+<li>etc..</li>
+</ul>
+</li>
+</ul>
+]]></content:encoded>
+    </item>
+    
+  </channel>
+</rss>
