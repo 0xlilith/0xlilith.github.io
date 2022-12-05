@@ -4,6 +4,7 @@ title: "Fake News Writeup"
 date: "2022-12-05"
 description: "Fake News Writeup - HTB University 2022 - CTF"
 tags:
+  - ctf
   - writeup
   - forensics
 ---
