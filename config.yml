@@ -1,4 +1,4 @@
-baseURL: "0xlilith.githu.io"
+baseURL:
 title: "0xlilith"
 paginate: 5
 theme: PaperModX
