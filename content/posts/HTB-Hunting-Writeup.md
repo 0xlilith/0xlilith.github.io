@@ -1,7 +1,7 @@
 ---
 author: "lilith"
 title: "HTB Hunting Writeup"
-date: "2022-12-06"
+date: "2022-12-05"
 description: "Hunting in the lower realms"
 tags:
   - writeup
