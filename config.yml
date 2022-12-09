@@ -110,6 +110,10 @@ menu:
           name: archives
           url: /archives/
           weight: 3
+        - identifier: exploits
+          name: exploits
+          url: https://0xlilith.github.io/exploits/
+          weight: 4
 
 # Read: https://github.com/reorx/hugo-PaperModX/wiki/FAQs#using-hugos-syntax-highlighter-chroma
 pygmentsUseClasses: true
