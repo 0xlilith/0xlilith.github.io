@@ -3,30 +3,24 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>/</loc>
-    <lastmod>2022-12-05T00:00:00+00:00</lastmod>
+    <lastmod>2022-12-16T00:00:00+00:00</lastmod>
   </url><url>
-    <loc>/tags/ctf/</loc>
-    <lastmod>2022-12-05T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>/posts/fake-news/</loc>
-    <lastmod>2022-12-05T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>/tags/forensics/</loc>
-    <lastmod>2022-12-05T00:00:00+00:00</lastmod>
-  </url><url>
-    <loc>/posts/htb-hunting-writeup/</loc>
-    <lastmod>2022-12-05T00:00:00+00:00</lastmod>
+    <loc>/posts/htp-sick-rop/</loc>
+    <lastmod>2022-12-16T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/posts/</loc>
-    <lastmod>2022-12-05T00:00:00+00:00</lastmod>
+    <lastmod>2022-12-16T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/tags/pwn/</loc>
-    <lastmod>2022-12-05T00:00:00+00:00</lastmod>
+    <lastmod>2022-12-16T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/tags/</loc>
-    <lastmod>2022-12-05T00:00:00+00:00</lastmod>
+    <lastmod>2022-12-16T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/tags/writeup/</loc>
+    <lastmod>2022-12-16T00:00:00+00:00</lastmod>
+  </url><url>
+    <loc>/posts/htb-hunting-writeup/</loc>
     <lastmod>2022-12-05T00:00:00+00:00</lastmod>
   </url><url>
     <loc>/tags/blog/</loc>

